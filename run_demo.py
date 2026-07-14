@@ -106,14 +106,13 @@ def main(args):
     if args.load_in_4bit:
         kwargs.update(
             {
-                "torch_dtype": torch.half,
                 "load_in_4bit": True,
                 "quantization_config": BitsAndBytesConfig(
                     load_in_4bit=True,
-                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_compute_dtype=torch_dtype,
                     bnb_4bit_use_double_quant=True,
                     bnb_4bit_quant_type="nf4",
-                    llm_int8_skip_modules=["visual_model"],
+                    llm_int8_skip_modules=["visual_model", "mm_projector"],
                 ),
             }
         )
@@ -144,7 +143,7 @@ def main(args):
     vision_tower = model.get_model().get_vision_tower()
     vision_tower.to(dtype=torch_dtype)
 
-    if args.precision == "bf16":
+    if args.precision == "bf16" and (not args.load_in_4bit) and (not args.load_in_8bit):
         model = model.bfloat16().cuda()
     elif (
         args.precision == "fp16" and (not args.load_in_4bit) and (not args.load_in_8bit)
