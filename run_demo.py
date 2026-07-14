@@ -36,6 +36,10 @@ def parse_args(args):
     parser.add_argument("--img_folder", default="", type=str)
     parser.add_argument("--input_mode", default="folder", type=str, choices=["folder", "file"],
                         help="Input mode: 'folder' for folder-based samples, 'file' for file-based samples (human contact only)")
+    parser.add_argument("--object_name", default=None, type=str,
+                        help="Object name used in the contact prompt. Defaults to parsing it "
+                             "from the image filename (text before '__'), which only makes sense "
+                             "for '<object>__<id>.jpg'-style demo filenames.")
     parser.add_argument(
         "--precision",
         default="bf16",
@@ -284,9 +288,12 @@ def main(args):
         prompts = []
         for base_prompt in BASE_PROMPT:
             for llava_image_path in llava_image_paths:
-                object_name = llava_image_path.split('/')[-1].split('__')[0].lower()
+                if args.object_name is not None:
+                    object_name = args.object_name
+                else:
+                    object_name = llava_image_path.split('/')[-1].split('__')[0].lower()
                 prompts.append(base_prompt.format(object=object_name))
-        
+
         llava_image_paths = llava_image_paths * len(BASE_PROMPT)
         sam_image_paths = sam_image_paths * len(llava_image_paths)
         overlay_sam_paths = overlay_sam_paths * len(llava_image_paths)
